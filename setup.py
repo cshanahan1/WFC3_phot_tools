@@ -3,7 +3,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-setup(name = 'photometry_tools',
+setup(name = 'WFC3_phot_tools',
       description = 'Python photometry tools for WFC3 calibration',
       author = 'Space Telescope Science Institute',
       url = 'https://github.com/shannnnnyyy/photometry_tools',
