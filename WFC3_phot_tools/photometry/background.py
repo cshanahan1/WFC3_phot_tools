@@ -1,24 +1,54 @@
-"""Computes MMM statistics within photutils apertures.
-The functions in this script enable the computation of statistics
-within a PhotUtils aperture, which is currently not directly
-implemented in PhotUtils itself.  This code is meant to be
-imported into other code, and then be usable as a single line to
-return all the statistics in a format similar to the
-aperture_photometry method in PhotUtils (i.e. an astropy table).
+"""
+Tools for computing backgroun statistics within photutils apertures.
+
 Authors
 -------
     - Varun Bajaj, December 2017
-Use
----
-    from background_median import aperture_stats_tbl
-    stats_tbl = aperture_stats_tbl(data, apertures)
-    See the docstring of aperture_stats_tbl for more info.
-"""
-import numpy as np
+    - Clare Shanahan, December 2019
 
-# WAY faster than astropy.stats.sigma_clipped_stats
-from scipy.stats import sigmaclip
+"""
+
 from astropy.table import Table
+import numpy as np
+from scipy.stats import sigmaclip
+from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
+
+def _gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+def calc_1d_gauss_background(data, bins=100, hist_range=(-10, 10)):
+    """ 
+    Fits a 1D gaussian distribution to pixels in `data`, returns mean of fit.
+
+    Parameters
+    -----------
+    data : array
+        Science array.
+    bins : int
+        Number of bins for histogram fit.
+    hist_range : tuple of ints
+        Range for fit (min, max).
+    Returns
+    -------
+    coeff : tuple
+        A, mu, sigma of gaussian fit. 
+
+    """
+    data = data.flatten()
+    h, b = np.histogram(data, range=hist_range, bins=bins)
+    bd = b[1]-b[0]
+    bdist = int(1.1/bd)
+    locs = find_peaks(h, distance=bdist)[0]
+    p0 = [1., 0., 1.]
+    centers = .5*b[:-1] + .5*b[1:]
+    coeff, var_matrix = curve_fit(_gauss, centers[locs], h[locs], p0=p0)
+    # Get the fitted curve
+    hist_fit = _gauss(centers, *coeff)
+    print(data[0:5])
+    print(coeff)
+    return coeff
 
 def aperture_stats_tbl(data, apertures,
                        method='exact', sigma_clip=True):
@@ -62,17 +92,16 @@ def aperture_stats_tbl(data, apertures,
 
     aperture_stats = np.array(aperture_stats)
 
-
     # Place the array of the x y positions alongside the stats
     stacked = np.hstack([apertures.positions, aperture_stats])
     # Name the columns
-    names = ['X','Y','aperture_mean','aperture_median','aperture_mode',
+    names = ['X', 'Y', 'aperture_mean', 'aperture_median', 'aperture_mode',
             'aperture_std', 'aperture_area']
     # Make the table
     stats_tbl = Table(data=stacked, names=names)
 
-
     return stats_tbl
+
 
 def calc_aperture_mmm(data, mask, sigma_clip):
     """Helper function to actually calculate the stats for pixels
