@@ -77,7 +77,7 @@ def detect_sources_scan(data, snr_threshold=3.0, size_kernel=(3,3),
         ax[0].imshow(segm.data, origin='lower')
         ax[1].scatter(properties_tbl['xcentroid'], 
                       properties_tbl['ycentroid'], marker='x', c='r')
-        z1, z2 = -12.10630989074707, 32.53888328838081
+        z1, z2 = (-12.10630989074707, 32.53888328838081)
         ax[1].imshow(data, origin='lower', cmap='Greys_r', vmin=z1, vmax=z2)
         title_str = '{} detected sources'.format(len(properties_tbl))
         if len(properties_tbl) == 1:
@@ -135,7 +135,7 @@ def calc_sky(data, x_pos, y_pos, source_mask_len,
     return back, backrms
 
 def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
-                             theta = 0.0, show=False):
+                             theta = 0.0, show=False, plt_title=None):
     """Aperture photometry on source located on x_pos, y_pos with
     rectangular aperture of dimensions specified by ap_length, ap_width
     is used. Aperture sums are NOT sky subtracted.
@@ -152,6 +152,13 @@ def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
         Width (along x axis) of photometric aperture.
     ap_length : int
         Length (along y axis) of photometric aperture.
+    theta : float
+        Angle of orientation (from x-axis) for aperture, in radians. 
+        Increases counter-clockwise. 
+    show : bool, optional
+        If true, plot showing aperture(s) on source will pop up. Defaults to F. 
+    plt_title : str or None, optional
+        Only used if `show` is True. Title for plot. Defaults to None.
     Returns
     -------
     phot_tab : `astropy.table`
@@ -169,10 +176,12 @@ def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
 
         mask = rect_ap.to_mask(method='center')
         data_cutout = mask.cutout(data)
-        plt.title(str(rect_ap.area))
+        plt.title(plt_title)
+        z1, z2 = (-12.10630989074707, 32.53888328838081)
         plt.imshow(data, origin = 'lower', vmin=z1, vmax=z2)
         rect_ap.plot(color='white', lw=2)
         plt.show()
         plt.close()
 
     return phot_table
+

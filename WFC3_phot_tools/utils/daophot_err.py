@@ -1,3 +1,5 @@
+import numpy as np 
+
 def compute_phot_err_daophot(flux, back, back_rms, phot_ap_area,
                              sky_ap_area, gain=1.0):
 
