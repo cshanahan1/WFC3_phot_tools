@@ -97,18 +97,27 @@ def query_by_data_id(dataset_ids, file_type):
 	""" Astroquery query by file rootname(s) or ASN ID. Query will return 
 		all records found for IDs in `dataset_ids` list (or string if 
 		single ID) of type `file_type`. `file_type` can be set to a string 
-		('FLT'), a list of strings (['FLT', DRZ']), or 'any'."""
+		('FLT'), a list of strings (['FLT', DRZ']), or 'any'. 
 
-	# initial query for all files in visit, since you can only query by ASN ID 
-	# and `dataset_ids might contain single exposure rootnames
-	if type(dataset_ids) == str:
-		visit_ids = dataset_ids[0:6] + '*'
-	if type(dataset_ids) == list:
-		visit_ids = list(set([x[0:6]+'*' for x in dataset_ids]))
+		Parameters
+		----------
+		dataset_ids : str or list of str
+			9-digit dataset id(s). Note, if these end in 'j' or 's', which
+			occasionally happens due to failed observations, the id may not
+			appear in the database. Change these files to end with 'q'
+			instead
+		file_type : str
+			Fits file type (e.g 'flt', 'flc').
+
+		Returns
+		-------
+		query_products : `astropy.table.Table`
+			Results of query.
+	"""
 
 	obsTable = Observations.query_criteria(obstype='all', 
 										   obs_collection='HST', 
-										   obs_id=visit_ids)
+										   obs_id=dataset_ids)
 	if file_type == 'any':
 		query_products = Observations.get_product_list(obsTable)
 	else:
@@ -127,8 +136,6 @@ def query_by_data_id(dataset_ids, file_type):
 			remove_rows.append(i)
 	query_products.remove_rows(remove_rows)		
 
-	print('{} records found'.format(len(query_products)))
-	print(query_products)
 	return query_products
 
 def download_products(query_products, output_dir=''):
@@ -170,18 +177,3 @@ def download_products(query_products, output_dir=''):
 
 		# remove temp directory
 		shutil.rmtree(output_dir + 'temp') # remove mast download dir 
-
-# def get_all_standard_star_flcs():
-# 	"""Gets all staring mode data for photom programs"""
-# 	prop_ids = [11426, 11450, 11557, 11903, 11907, 12090, 
-# 			12333, 12334, 12698, 12699, 12707, 13088, 
-# 			13089, 13096, 13574, 13575, 13584, 13711, 
-# 			14018, 14021, 14382, 14384, 14815, 14883, 
-# 			14992, 15113, 15398, 15399, 15582, 15583]
-# 	prop_ids = [str(x) for x in prop_ids]
-# 	targnames = ['G191B2B'] + ['GD153', 'GD-153'] + ['GD71', 'GD-71'] + \
-# 				['P330E', 'GSC-02581-02323'] + ['GRW+70D5824', 'GRW+70D']
-# 	output_dir = '/grp/hst/wfc3p/cshanahan/phot_group_work/standard_star_data/test'
-# 	query_products = query_by_propid_targname(prop_ids[25:], targnames, 'flc')
-# 	download_products(query_products, output_dir=output_dir)
-
