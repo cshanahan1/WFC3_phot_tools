@@ -160,8 +160,6 @@ def mask_and_repair_flagged_pixels(data, scan_orient):
 
 	#### pass #1 ####
 	mask = 1.*make_cr_mask(data)
-	if scan_orient == 'H':
-		mask = mask.T
 
 	#replace masked pix with the linear interp. of the nearest 2 unmasked pixels
 	k = np.where(mask > 0)
