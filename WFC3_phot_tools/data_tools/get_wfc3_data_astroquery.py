@@ -14,8 +14,8 @@ import shutil
 """ 
 
 
-def query_by_propid_targ_filter(prop_ids, targnames, filters='any',
-								file_type='flc', instrument ='WFC3/UVIS'):
+def query_by_propid_targ_filter(prop_ids, targnames='any', filters='any',
+								file_type='any'):
 
 	""" Astroquery query for data from `instrument` by target name, filter, 
 	and proposal ID. Returns table of data products of file type(s) in 
@@ -36,8 +36,6 @@ def query_by_propid_targ_filter(prop_ids, targnames, filters='any',
 		File extention type(s) desired (i.e flt, flc, drz...), as a string for 
 		a single type or a list for many. If 'any', all available file types 
 		will be returned.
-	instrument : str
-		Instruemt to query for data from, defaults to 'WFC3/UVIS'.
 
 	Returns
 	--------
@@ -48,21 +46,20 @@ def query_by_propid_targ_filter(prop_ids, targnames, filters='any',
 
 	if type(prop_ids) != list:
 		prop_ids = [prop_ids]
+	if targnames == 'any':
+		targnames = '*'
+	if filters == 'any':
+		filters = '*'
 
 	query_products = Table()
 	j = 0
 	for i, prop_id in enumerate(prop_ids): #iterate to avoid timeout
 		print('Querying for data from {}.'.format(prop_id))
 
-		if targnames == 'any':
-			obsTable = Observations.query_criteria(obs_collection='HST', 
-												   instrument_name=instrument,
-												   proposal_id=prop_id)
-		else:
-			obsTable = Observations.query_criteria(obs_collection='HST', 
-												   instrument_name=instrument,
-												   proposal_id=prop_id,
-												   target_name=targnames)
+		obsTable = Observations.query_criteria(obs_collection='HST', 
+											   proposal_id=prop_id,
+											   target_name=targnames,
+											   filters=filters)
 		if file_type == 'any':
 			query_products = Observations.get_product_list(obsTable)
 		else:
@@ -88,7 +85,6 @@ def query_by_propid_targ_filter(prop_ids, targnames, filters='any',
 		print('{} records found'.format(len(query_products)))
 		j = 1
 
-	print('{} total records found.'.format(len(query_products_total)))
 	return query_products_total
 
 
