@@ -133,7 +133,6 @@ def query_by_data_id(dataset_ids, file_type):
     query_products_total.remove_rows(remove_rows)
 
     print('{} records found'.format(len(query_products_total)))
-    print(query_products_total)
     return query_products_total
 
 
