@@ -3,6 +3,10 @@
 This module contains functions to perform source detection and aperture
 photometry on spatial scan data.
 
+Author
+------
+Clare Shanahan, Dec 2019
+
 """
 
 from astropy.convolution import Gaussian2DKernel
@@ -13,16 +17,17 @@ import numpy as np
 from photutils import (detect_sources, detect_threshold, source_properties,
                        RectangularAperture, aperture_photometry)
 
-def detect_sources_scan(data, snr_threshold=3.0, size_kernel=(3,3), 
-                        n_pixels=500, show=False):
+
+def detect_sources_scan(data, snr_threshold=3.0, sigma_kernel=3,
+                        size_kernel=(3, 3), n_pixels=500, show=False):
 
     """Uses image segmentation to detect sources in spatially scanned images.
 
         A pixel-wise threshold image used to detect sources is generated based
         on the data and the snr_threshold provided. Data is then convolved with
         a 2D Gaussian kernel, of width sigma_kernel (default 3.0) and x, y size
-        given by size_kernel (default 3 pixels x 3 pixels) to smooth out some of
-        the background noise.
+        given by size_kernel (default 3 pixels x 3 pixels) to smooth out some
+        of the background noise.
 
         A segmentation map of the convolved image is generated using the
         threshold image and npixels, the lower limit on the number of connected
@@ -56,26 +61,27 @@ def detect_sources_scan(data, snr_threshold=3.0, size_kernel=(3,3),
             Table containing properties of detected sources()
 
         """
-    #make threshold image
-    threshold = detect_threshold(data, nsigma = snr_threshold)
+    # make threshold image
+    threshold = detect_threshold(data, nsigma=snr_threshold)
 
-    #construct gaussian kernel to smooth image
-    sigma = 3.0 * gaussian_fwhm_to_sigma
+    # construct gaussian kernel to smooth image
+    sigma = sigma_kernel * gaussian_fwhm_to_sigma
     kernel = Gaussian2DKernel(sigma, x_size=size_kernel[0],
                               y_size=size_kernel[1])
     kernel.normalize()
 
-    #pass in data, convolution kernel to make segmentation map
+    # pass in data, convolution kernel to make segmentation map
 
-    segm = detect_sources(data, threshold, npixels=n_pixels, filter_kernel=kernel)
+    segm = detect_sources(data, threshold, npixels=n_pixels,
+                          filter_kernel=kernel)
 
     props = source_properties(data, segm)
     properties_tbl = props.to_table()
 
     if show:
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,7))
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15, 7))
         ax[0].imshow(segm.data, origin='lower')
-        ax[1].scatter(properties_tbl['xcentroid'], 
+        ax[1].scatter(properties_tbl['xcentroid'],
                       properties_tbl['ycentroid'], marker='x', c='r')
         z1, z2 = (-12.10630989074707, 32.53888328838081)
         ax[1].imshow(data, origin='lower', cmap='Greys_r', vmin=z1, vmax=z2)
@@ -90,9 +96,9 @@ def detect_sources_scan(data, snr_threshold=3.0, size_kernel=(3,3),
     return properties_tbl
 
 
-def calc_sky(data, x_pos, y_pos, source_mask_len,
-                               source_mask_width, n_pix, method = 'median'):
-    """ 
+def calc_sky(data, x_pos, y_pos, source_mask_len, source_mask_width, n_pix,
+             method='median'):
+    """
     Calculates sky level in a rectangular annulus around source. The source is
     first masked with a rectangle of dimensions source_mask_width x
     source_mask_length. Then, the background is computed in a rectangular
@@ -119,9 +125,10 @@ def calc_sky(data, x_pos, y_pos, source_mask_len,
      """
     temp_data = copy.deepcopy(data)
 
-    #mask rect. aperture around source, to exclude these pix in background calc.
+    # mask rect. aperture around source, to exclude these pix in sky calc.
     temp_data[int(y_pos-(source_mask_len/2.)):int(y_pos+(source_mask_len/2.)),
-              int(x_pos-(source_mask_width/2.)):int(x_pos+(source_mask_width/2.))] = np.nan
+              int(x_pos-(source_mask_width/2.)):
+              int(x_pos+(source_mask_width/2.))] = np.nan
 
     flat_dat = temp_data.flatten()
 
@@ -134,8 +141,9 @@ def calc_sky(data, x_pos, y_pos, source_mask_len,
 
     return back, backrms
 
+
 def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
-                             theta = 0.0, show=False, plt_title=None):
+                             theta=0.0, show=False, plt_title=None):
     """Aperture photometry on source located on x_pos, y_pos with
     rectangular aperture of dimensions specified by ap_length, ap_width
     is used. Aperture sums are NOT sky subtracted.
@@ -153,10 +161,10 @@ def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
     ap_length : int
         Length (along y axis) of photometric aperture.
     theta : float
-        Angle of orientation (from x-axis) for aperture, in radians. 
-        Increases counter-clockwise. 
+        Angle of orientation (from x-axis) for aperture, in radians.
+        Increases counter-clockwise.
     show : bool, optional
-        If true, plot showing aperture(s) on source will pop up. Defaults to F. 
+        If true, plot showing aperture(s) on source will pop up. Defaults to F.
     plt_title : str or None, optional
         Only used if `show` is True. Title for plot. Defaults to None.
     Returns
@@ -167,21 +175,19 @@ def aperture_photometry_scan(data, x_pos, y_pos, ap_width, ap_length,
 
     copy_data = copy.copy(data)
 
-    rect_ap = RectangularAperture((x_pos, y_pos) ,w=ap_width,
+    rect_ap = RectangularAperture((x_pos, y_pos), w=ap_width,
                                   h=ap_length, theta=theta)
 
     phot_table = aperture_photometry(copy_data, rect_ap,
                                      method='exact')
     if show:
-
         mask = rect_ap.to_mask(method='center')
         data_cutout = mask.cutout(data)
         plt.title(plt_title)
         z1, z2 = (-12.10630989074707, 32.53888328838081)
-        plt.imshow(data, origin = 'lower', vmin=z1, vmax=z2)
+        plt.imshow(data, origin='lower', vmin=z1, vmax=z2)
         rect_ap.plot(color='white', lw=2)
         plt.show()
         plt.close()
 
     return phot_table
-
