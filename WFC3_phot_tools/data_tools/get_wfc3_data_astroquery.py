@@ -112,7 +112,7 @@ def query_by_data_id(dataset_ids, file_type):
             query_products = Observations.get_product_list(obsTable)
         else:
             if type(file_type) == str:
-                file_type  file_type.upper()
+                file_type = file_type.upper()
             if type(file_type) == list:
                 file_type = [x.upper() for x in file_type]
             query_products = Observations.get_product_list(obsTable)
