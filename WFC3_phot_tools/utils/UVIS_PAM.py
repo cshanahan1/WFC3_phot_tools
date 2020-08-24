@@ -1,5 +1,7 @@
 from astropy.io import fits
+import copy
 import numpy as np
+
 
 def make_PAMcorr_image_UVIS(data, prihdr, scihdr, pamdir):
     """Creates the Pixel Area Map (PAM) image.
@@ -17,18 +19,19 @@ def make_PAMcorr_image_UVIS(data, prihdr, scihdr, pamdir):
             PAM corrected data
     """
 
+    data = copy.copy(data)
     x0 = int(np.abs(scihdr['LTV1']))
     y0 = int(np.abs(scihdr['LTV2']))
     x1 = int(x0 + scihdr['NAXIS1'])
     y1 = int(y0 + scihdr['NAXIS2'])
 
     if scihdr['CCDCHIP'] == 1:
-        pam=fits.getdata(pamdir+'UVIS1wfc3_map.fits')
-        pamcorr_data = data * pam[y0:y1,x0:x1]
+        pam = fits.getdata(pamdir + 'UVIS1wfc3_map.fits')
+        pamcorr_data = data * pam[y0:y1, x0:x1]
 
     elif scihdr['CCDCHIP'] == 2:
-        pam=fits.getdata(pamdir+'UVIS2wfc3_map.fits')
-        pamcorr_data = data * pam[y0:y1,x0:x1]
+        pam = fits.getdata(pamdir + 'UVIS2wfc3_map.fits')
+        pamcorr_data = data * pam[y0:y1, x0:x1]
     else:
         raise Exception('Chip case not handled.')
 
