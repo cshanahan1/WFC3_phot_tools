@@ -158,6 +158,7 @@ def download_products(query_products, output_dir=''):
     output_dir = os.path.join(output_dir, '')
 
     # make temp dir in `output_dir`. error if it exists.
+    print(output_dir + 'temp')
     assert(os.path.isdir(output_dir + 'temp') is False)
     os.makedirs(output_dir + 'temp')
 
